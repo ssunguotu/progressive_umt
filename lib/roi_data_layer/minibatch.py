@@ -12,8 +12,7 @@ from __future__ import print_function
 
 import numpy as np
 import numpy.random as npr
-from scipy.misc import imread
-from scipy.misc import imsave
+from imageio import imread
 from model.utils.config import cfg
 from model.utils.blob import prep_im_for_blob, im_list_to_blob
 import imgaug as ia
@@ -55,7 +54,7 @@ def bbs2numpy(bbs):
         x1 = bb.x1 - 1
         y1 = bb.y1 - 1
         w = bb.x2 - bb.x1
-        h = bb.y2 - bb.y2
+        h = bb.y2 - bb.y1
         label = float(bb.label)
         bboxes.append([x1, y1, w, h, label])
     return np.array(bboxes, dtype=np.float32)
@@ -112,7 +111,7 @@ def _get_image_blob(roidb, scale_inds, augment=False, seed=2020):
     return blob, im_scales, gt_boxes
 
 def augmentor(image, bounding_boxes, seed=2020):
-
+    # 把blur 和 FDA封装起来
     ia.seed(seed)
     bbxes = []
     for gt_box in bounding_boxes:

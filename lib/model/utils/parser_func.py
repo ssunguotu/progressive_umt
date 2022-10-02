@@ -415,6 +415,12 @@ def set_dataset_args(args, test=False):
                 "MAX_NUM_GT_BOXES",
                 "30",
             ]
+        # visDrone
+        elif args.dataset == "visdroneDay":
+            args.imdb_name = "visdroneDay_train" # source
+            args.imdbval_name = "visdroneDay_test"
+            args.imdb_name_fake_target = "visdroneDayBlack_train"
+            args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '60']
 
         if args.dataset_t == "water":
             args.imdb_name_target = "water_train"
@@ -483,6 +489,12 @@ def set_dataset_args(args, test=False):
                 "MAX_NUM_GT_BOXES",
                 "30",
             ]
+                # visDrone
+        elif args.dataset_t == "visdroneNight":
+            args.imdb_name_target = "visdroneNight_train" # target
+            args.imdbval_name_target = "visdroneNight_test"
+            args.imdb_name_fake_source = "visdroneNight_train"
+            args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '60']
     else:
         if args.dataset == "pascal_voc":
             args.imdb_name = "voc_2007_val"
@@ -601,7 +613,15 @@ def set_dataset_args(args, test=False):
                 "MAX_NUM_GT_BOXES",
                 "20",
             ]
-
+        # TEST visDrone
+        elif args.dataset == "visdroneDay":
+            args.imdb_name = "visdroneDay_train" # target
+            args.imdbval_name = "visdroneDay_test"
+            args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '60']
+        elif args.dataset == "visdroneNight":
+            args.imdb_name = "visdroneNight_train" # target
+            args.imdbval_name = "visdroneNight_test"
+            args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '60']
     args.cfg_file = (
         "cfgs/{}_ls.yml".format(args.net)
         if args.large_scale

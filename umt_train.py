@@ -30,7 +30,7 @@ from model.utils.net_utils import (
 from model.ema.optim_weight_ema import WeightEMA
 from model.utils.parser_func import parse_args, set_dataset_args
 from model.rpn.bbox_transform import clip_boxes
-from model.nms.nms_wrapper import nms
+from model.roi_layers import nms
 from model.rpn.bbox_transform import bbox_transform_inv
 
 from prettytimer import PrettyTimer
@@ -57,7 +57,7 @@ def get_cfg():
 if __name__ == "__main__":
     args = get_cfg()
 
-    output_dir = f"{args.save_dir}/{args.net}/{args.dataset}"
+    output_dir = f"/mnt/lustre/wangyajie/sgt/models/umt/{args.save_dir}/{args.net}/{args.dataset}"
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
@@ -119,6 +119,9 @@ if __name__ == "__main__":
     t_fake_imdb, t_fake_train_size, t_fake_dataloader = get_dataloader(
         args.imdb_name_fake_target, args
     )
+
+    # fake_source: augment target
+    # fake_target: augment source
 
     print("{:d} source roidb entries".format(s_train_size))
     print("{:d} source like roidb entries".format(s_fake_train_size))
@@ -319,10 +322,11 @@ if __name__ == "__main__":
             count_iter += 1
 
             # put source data into variable
-            im_data.data.resize_(data_s[0].size()).copy_(data_s[0])
-            im_info.data.resize_(data_s[1].size()).copy_(data_s[1])
-            gt_boxes.data.resize_(data_s[2].size()).copy_(data_s[2])
-            num_boxes.data.resize_(data_s[3].size()).copy_(data_s[3])
+            with torch.no_grad():
+                im_data.resize_(data_s[0].size()).copy_(data_s[0])
+                im_info.resize_(data_s[1].size()).copy_(data_s[1])
+                gt_boxes.resize_(data_s[2].size()).copy_(data_s[2])
+                num_boxes.resize_(data_s[3].size()).copy_(data_s[3])
 
             student_fasterRCNN.zero_grad()
             (
@@ -349,12 +353,13 @@ if __name__ == "__main__":
                 conf_loss = confidence_loss.mean()
 
             if args.target_like:
-                # put fake target data into variable
-                im_data.data.resize_(data_t_fake[0].size()).copy_(data_t_fake[0])
-                im_info.data.resize_(data_t_fake[1].size()).copy_(data_t_fake[1])
-                # gt is empty
-                gt_boxes.data.resize_(data_t_fake[2].size()).copy_(data_t_fake[2])
-                num_boxes.data.resize_(data_t_fake[3].size()).copy_(data_t_fake[3])
+                with torch.no_grad():
+                    # put fake target data into variable
+                    im_data.resize_(data_t_fake[0].size()).copy_(data_t_fake[0])
+                    im_info.resize_(data_t_fake[1].size()).copy_(data_t_fake[1])
+                    # gt is empty
+                    gt_boxes.resize_(data_t_fake[2].size()).copy_(data_t_fake[2])
+                    num_boxes.resize_(data_t_fake[3].size()).copy_(data_t_fake[3])
 
                 (
                     rois,
@@ -381,12 +386,12 @@ if __name__ == "__main__":
 
             if epoch > pretrained_epoch and args.pl:
                 teacher_fasterRCNN.eval()
-
-                im_data.data.resize_(data_s_fake[0].size()).copy_(data_s_fake[0])
-                im_info.data.resize_(data_s_fake[1].size()).copy_(data_s_fake[1])
-                # gt is emqpty
-                gt_boxes.data.resize_(1, 1, 5).zero_()
-                num_boxes.data.resize_(1).zero_()
+                with torch.no_grad():
+                    im_data.resize_(data_s_fake[0].size()).copy_(data_s_fake[0])
+                    im_info.resize_(data_s_fake[1].size()).copy_(data_s_fake[1])
+                    # gt is emqpty
+                    gt_boxes.resize_(1, 1, 5).zero_()
+                    num_boxes.resize_(1).zero_()
                 (
                     rois,
                     cls_prob,
@@ -463,7 +468,7 @@ if __name__ == "__main__":
                         cls_dets = torch.cat((cls_boxes, cls_scores.unsqueeze(1)), 1)
                         # cls_dets = torch.cat((cls_boxes, cls_scores), 1)
                         cls_dets = cls_dets[order]
-                        keep = nms(cls_dets, cfg.TEST.NMS)
+                        keep = nms(cls_boxes[order, :], cls_scores[order], cfg.TEST.NMS)
                         cls_dets = cls_dets[keep.view(-1).long()]
                         # all_boxes[j][i] = cls_dets.cpu().numpy()
                         cls_dets_numpy = cls_dets.cpu().numpy()
@@ -487,11 +492,12 @@ if __name__ == "__main__":
 
                 # teacher_fasterRCNN.train()
                 # put source-like data into variable
-                im_data.data.resize_(data_t[0].size()).copy_(data_t[0])
-                im_info.data.resize_(data_t[1].size()).copy_(data_t[1])
-                gt_boxes_padding = torch.unsqueeze(gt_boxes_padding, 0)
-                gt_boxes.data.resize_(gt_boxes_padding.size()).copy_(gt_boxes_padding)
-                num_boxes.data.resize_(num_boxes_cpu.size()).copy_(num_boxes_cpu)
+                with torch.no_grad():
+                    im_data.resize_(data_t[0].size()).copy_(data_t[0])
+                    im_info.resize_(data_t[1].size()).copy_(data_t[1])
+                    gt_boxes_padding = torch.unsqueeze(gt_boxes_padding, 0)
+                    gt_boxes.resize_(gt_boxes_padding.size()).copy_(gt_boxes_padding)
+                    num_boxes.resize_(num_boxes_cpu.size()).copy_(num_boxes_cpu)
 
                 (
                     rois,

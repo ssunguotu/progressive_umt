@@ -47,6 +47,29 @@ from datasets.comic_cycle_voc import comic_cycle_voc
 from datasets.city_unit_foggy import city_unit_foggy
 from datasets.foggy_unit_city import foggy_unit_city
 
+# visdrone
+from datasets.voc_visdrone import voc_visdrone
+import os
+
+src_code = '/mnt/lustre/wangyajie/sgt/datasets/VOC'
+
+
+name = 'visdroneDayFDA_train'
+__sets[name] = (lambda time='DayFDA', split='train': voc_visdrone(time, '', split, devkit_path=os.path.join('{}/'.format(src_code), 'visdrone{}'.format(time))))
+
+# visdrone without shift
+for time in ['Day', 'Night']:
+  for split in ['train', 'test']:
+    name = 'visdrone{}_{}'.format(time, split)
+    __sets[name] = (lambda time=time, split=split: voc_visdrone(time, '', split, devkit_path=os.path.join('{}/'.format(src_code), 'visdrone{}'.format(time))))
+
+# visdrone with shift
+for time in ['Day']:
+  for split in ['train']:
+    for shift in ['Black', 'Yellow', 'Red']:
+      name = 'visdrone{}{}_{}'.format(time, shift, split)
+      __sets[name] = (lambda time=time, shift=shift, split=split: voc_visdrone(time, shift, split, devkit_path=os.path.join('{}/'.format(src_code), 'visdroneDay{}'.format(shift))))
+
 for split in ["train", "trainval", "val", "test", "train_s"]:
     name = "cityscape_{}".format(split)
     __sets[name] = lambda split=split: cityscape(split)

@@ -1,7 +1,7 @@
 cython
 cffi
 opencv-python
-scipy==1.1.0
+scipy
 msgpack
 easydict
 matplotlib
@@ -9,3 +9,6 @@ pyyaml
 tensorboardX
 imgaug==0.2.9
 prettytable
+pycocotools
+imageio
+prettytimer
